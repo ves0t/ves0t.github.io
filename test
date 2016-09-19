@@ -1,1 +1,252 @@
-<html><head><title>Test</title></head><body><a href = "index">Back to vesot.com</a></body></html>
+<html>
+<head><title>Buddhabrot</title></head>
+<body style="background-color:gray">
+<a href = "index.html">Back to vesot.com</a><br/>
+<div display="inline">
+<input type="text" id ='iW' value = 400></input><i> Width</i> <br/>
+<input type="text" id ='iB'value = 100></input> <i>Blue</i> <br/>
+<input type="text" id ='iG'value = 200></input> <i>Green</i><br/>
+<input type="text" id ='iR'value = 400></input> <i>Red</i><br/>
+<button onclick="init()">Generate</button><br/>
+<i id='stat'>Status: </i>
+</div><br/>
+<canvas id="can" style="background-color:white"></canvas>
+</body>
+</html>
+<script>
+
+
+
+var canvas = document.getElementById("can");
+var ctx = canvas.getContext("2d");
+
+
+var height = 200;
+var width =  height/2*3.5;
+
+var epochLength = 10;
+
+canvas.width = height;
+canvas.height = width;
+
+var scale = 0.5
+var histR= new Array();
+var histG= new Array();
+var histB= new Array();
+var histU= new Array();
+
+var max_iterB=20;
+var max_iterG=200;
+var max_iterR=2000;
+
+
+var tTemp;
+var fps = 0;
+var epoch = 0;
+
+function init(){
+	
+	var d = new Date();
+	tTemp = d.getTime();
+	epoch = 0;
+	//setParams
+	height = parseInt(document.getElementById('iW').value);
+	width =  height/2*3.5;
+	max_iterB=parseInt(document.getElementById('iB').value);
+	max_iterG=parseInt(document.getElementById('iG').value);
+	max_iterR=parseInt(document.getElementById('iR').value);
+	
+	canvas.width = height;
+	canvas.height = width;
+	
+	//init Arrays
+	for(var c = 0;c<width;c++){
+		histR[c] = new Array();
+		histG[c] = new Array();
+		histB[c] = new Array();
+		histU[c] = new Array();
+		for(var c1 = 0;c1<height;c1++){
+			histR[c][c1] = 0.0;
+			histG[c][c1] = 0.0;
+			histB[c][c1] = 0.0;
+			histU[c][c1] = false;
+		}
+	}
+	
+	run();
+}
+
+function updateHist(){
+
+		
+			for(var c = 0;c<width;c++){
+				for(var c1 = 0;c1<height;c1++){
+					histU[c][c1] = false;
+				}
+			}
+
+	for(r1=0;r1<epochLength;r1++){
+		
+			
+			var rR=4;
+			var rG=4;
+			var rB=4;
+
+			var x0 = (Math.random()*3.5/scale)-(2.5/scale);
+			var y0 = (Math.random()*2/scale)-(1);
+
+			x = 0.0;
+			y = 0.0;
+			iter = 0.0;
+			//red
+			
+			passed = false;
+			while((x*x)+(y*y)<rR && iter<max_iterR){
+				xtemp = (x*x)-(y*y)+x0;
+				y = (2*x*y)+y0;
+				x = xtemp;
+				iter++;
+				if((x*x)+(y*y)>=rR){passed = true;}
+			}
+
+			if(passed){
+			x = 0.0;
+			y = 0.0;
+			iter = 0.0;
+			while((x*x)+(y*y)<rR && iter<max_iterR){
+				xtemp = (x*x)-(y*y)+x0;
+				y = (2*x*y)+y0;
+				x = xtemp;
+				iter++;
+				var xNorm = Math.floor(((x+0.7+(3.5*scale))/1.7*width*scale));
+				var yNorm = Math.floor(((y+(2*scale))*height*scale));
+
+				if(xNorm>=0&&yNorm>=0&&xNorm<width&&yNorm<height){
+				histR[xNorm][yNorm]+=1;histU[xNorm][yNorm]=true;}
+
+			}}
+
+			//green
+			
+			x = 0.0;
+			y = 0.0;
+			iter = 0.0;
+			passed = false;
+			while((x*x)+(y*y)<rG && iter<max_iterG){
+				xtemp = (x*x)-(y*y)+x0;
+				y = (2*x*y)+y0;
+				x = xtemp;
+				iter++;
+				if((x*x)+(y*y)>=rG){passed = true;}
+			}
+
+			if(passed){
+			x = 0.0;
+			y = 0.0;
+			iter = 0.0;
+			while((x*x)+(y*y)<rG && iter<max_iterG){
+				xtemp = (x*x)-(y*y)+x0;
+				y = (2*x*y)+y0;
+				x = xtemp;
+				iter++;
+				var xNorm = Math.floor(((x+0.7+(3.5*scale))/1.7*width*scale));
+				var yNorm = Math.floor(((y+(2*scale))*height*scale));
+
+				if(xNorm>=0&&yNorm>=0&&xNorm<width&&yNorm<height){
+				histG[xNorm][yNorm]+=1;histU[xNorm][yNorm]=true;}
+
+			}}
+
+			//blue
+
+			x = 0.0;
+			y = 0.0;
+			iter = 0.0;
+			passed = false;
+			while((x*x)+(y*y)<rB && iter<max_iterB){
+				xtemp = (x*x)-(y*y)+x0;
+				y = (2*x*y)+y0;
+				x = xtemp;
+				iter++;
+				if((x*x)+(y*y)>=rB){passed = true;}
+			}
+
+			if(passed){
+			x = 0.0;
+			y = 0.0;
+			iter = 0.0;
+			while((x*x)+(y*y)<rB && iter<max_iterB){
+				xtemp = (x*x)-(y*y)+x0;
+				y = (2*x*y)+y0;
+				x = xtemp;
+				iter++;
+				var xNorm = Math.floor(((x+0.7+(3.5*scale))/1.7*width*scale));
+				var yNorm = Math.floor(((y+(2*scale))*height*scale));
+				
+				if(xNorm>=0&&yNorm>=0&&xNorm<width&&yNorm<height){
+				histB[xNorm][yNorm]+=1;histU[xNorm][yNorm]=true;}
+
+			}}
+
+	}
+}
+
+function drawHist(){
+	lR =0;
+	lG =0;
+	lB =0;
+	
+	
+
+	for(var c = 0;c<width;c++){
+		for(var c1 = 0;c1<height;c1++){
+
+			if(lR<Math.floor(histR[c][c1])){lR=Math.floor(histR[c][c1])}
+			if(lG<Math.floor(histG[c][c1])){lG=Math.floor(histG[c][c1])}
+			if(lB<Math.floor(histB[c][c1])){lB=Math.floor(histB[c][c1])}
+		
+		}
+	}
+
+	//console.log(lR+" "+lG+" "+lB)
+
+	for(var c = 0;c<width;c++){
+		for(var c1 = 0;c1<height;c1++){
+			if(!histU[c][c1]){continue;}
+			var r = Math.floor(histR[c][c1]*(255/lR));
+			var g = Math.floor(histG[c][c1]*(255/lG));
+			var b = Math.floor(histB[c][c1]*(255/lB));
+			ctx.fillStyle = "rgba("+r+","+g+","+b+","+1+")";
+			ctx.fillRect(c1,c, 1, 1 );
+		}
+	}
+}
+
+function run(){
+
+	window.requestAnimationFrame(run);
+	updateHist();
+	drawHist();
+	epoch+=epochLength/1000000;
+	//console.log("epoch" + epoch)
+	sync();
+	postStatus("FPS " + parseInt(fps) + " Epoch " + parseInt(epoch) +"m"+parseInt(epoch*10%10) +"k")
+}
+
+function sync(){
+	var d = new Date();
+	var tNow = d.getTime();
+	fps = 1000/(tNow-tTemp);
+	if(fps<22){if(epochLength>20){epochLength-=10;}}
+	if(fps>22){epochLength+=10;}
+	//
+	tTemp = d.getTime();
+}
+
+function postStatus(s){
+
+	document.getElementById('stat').innerHTML = "Status: " + s;
+
+}
+
+</script>
