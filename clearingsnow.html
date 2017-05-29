@@ -1,0 +1,335 @@
+<html>
+<head><title>Clearing Snow</title></head><body>
+<a href = "index.html">Back to vesot.com</a><br/><br/>
+<canvas id='can' style ='background-color:gray'></canvas>
+<canvas id='weights' style ='background-color:gray'></canvas>
+</body>
+</html>
+<script>
+
+var canvas = document.getElementById('can')
+var weightsCanvas = document.getElementById('weights')
+var ctx = canvas.getContext('2d');
+var ctxW = weightsCanvas.getContext('2d');
+var map = new Array();
+var houses = new Array();
+var weights = new Array();
+var win = false;
+
+var connections = 0;
+var clearedCounter = 0;
+
+var used = new Array();
+var usedA=false;
+var usedB=false;
+var usedC=false;
+var usedD=false;
+
+var width = 16;
+var height = 16;
+
+canvas.width = 20+(width*10);
+canvas.height = 20+(height*10);
+weightsCanvas.width = 20+(width*10);
+weightsCanvas.height = 20+(height*10);
+
+// generate blank
+for( var c = 0;c<height;c++){
+	map[c] = new Array();
+	for( var c1 = 0;c1<width;c1++){
+		map[c][c1]="O";
+	}
+}
+// add 10% cleared ground
+for( var c = 0;c<height;c++){
+	for( var c1 = 0;c1<width;c1++){
+		if(Math.random()*100<10){map[c][c1]=".";}
+	}
+}
+
+// add 10% obstacles
+for( var c = 0;c<height;c++){
+	for( var c1 = 0;c1<width;c1++){
+		if(Math.random()*100<10){map[c][c1]="#";}
+	}
+}
+
+// add four houses
+for(var c = 0;c<4;c++){
+	var x = Math.floor(Math.random()*width)
+	var y = Math.floor(Math.random()*height)
+	
+	errCount = 0;
+	
+	while(map[y][x]=="A"||map[y][x]=="B"||map[y][x]=="C"||map[y][x]=="D"){
+		var x = Math.floor(Math.random()*width)
+		var y = Math.floor(Math.random()*height)
+		errCount++;
+	}
+	
+	switch(c){
+		case 0:map[y][x]="A";break;
+		case 1:map[y][x]="B";break;
+		case 2:map[y][x]="C";break;
+		case 3:map[y][x]="D";break;
+		default:p("Error adding houses")
+	}
+}
+
+
+
+function refresh(){
+	
+	ctx.clearRect(0,0,canvas.width,canvas.height);
+	ctxW.clearRect(0,0,weightsCanvas.width,weightsCanvas.height);
+	
+	for( var c = 0;c<height;c++){
+		for( var c1 = 0;c1<width;c1++){
+		ctx.font = "10px Arial";
+		switch(map[c][c1]){
+			case "A":ctx.fillStyle = "white";break;
+			case "B":ctx.fillStyle = "pink";break;
+			case "C":ctx.fillStyle = "yellow";break;
+			case "D":ctx.fillStyle = "cyan";break;
+			default:ctx.fillStyle = "black";
+		}	
+			ctx.fillText(map[c][c1],10+(c1*10),20+(c*10));
+			
+			
+		switch(weights[c][c1].l){
+			case "A":ctxW.fillStyle = "white";break;
+			case "B":ctxW.fillStyle = "pink";break;
+			case "C":ctxW.fillStyle = "yellow";break;
+			case "D":ctxW.fillStyle = "cyan";break;
+			default:ctxW.fillStyle = "black";
+		}		
+			ctxW.fillText(weights[c][c1].n,10+(c1*10),20+(c*10));
+		}
+		
+	}
+}
+
+function p(e){
+	console.log(e);
+}
+
+// init wights array
+
+function initWeights(){
+	weights = new Array();
+
+	for(var c = 0;c<height;c++){
+		weights[c]=new Array()
+		for(var c1 = 0;c1<width;c1++){
+			if(map[c][c1]=="A"||map[c][c1]=="B"||map[c][c1]=="C"||map[c][c1]=="D"){
+				weights[c][c1] = new wTile(0,map[c][c1],"end",c,c1);
+			}else if(
+				map[c][c1]=="#"){weights[c][c1] = new wTile("#","X","none",c,c1);
+			}else{
+				weights[c][c1] = new wTile(".","X","none",c,c1);
+			}
+		}
+	}
+}
+function wTile(n,l,parent,x,y){
+	this.n=n;
+	this.l=l;
+	this.parent=parent;
+	
+	this.x = x;
+	this.y = y;
+}
+
+//weight the graph
+
+//find the smallest value cell with empty neighbours
+
+function stepWeights(){
+	
+	var smallest = 10000;
+	var sTile;
+	var temp;
+
+	for(var c = 0;c<height;c++){
+		for(var c1 = 0;c1<width;c1++){
+			var tempX = smallestEmpty(c,c1);
+			if(weights[c][c1].n!="."&&weights[c][c1].n!="#"&&tempX!="none"){
+				if(weights[c][c1].n+tempX[2]<=smallest){
+					sTile=weights[c][c1];
+					temp = tempX;
+					smallest=weights[c][c1].n+tempX[2];
+				}
+			}
+		}
+	}
+
+	weights[temp[0]][temp[1]] = new wTile(sTile.n+temp[2],sTile.l,sTile,temp[0],temp[1]);
+}
+
+function run(){
+		if(!win){
+			window.requestAnimationFrame(run);
+			stepWeights();
+			
+			//check connections
+			findConnections();
+			//check win	
+			console.log("tick")
+			refresh();
+		}
+}
+
+function smallestEmpty(x,y){
+	if(x-1>=0){if(map[x-1][y]=="."&&weights[x-1][y].n=="."){return [x-1,y,0]}}
+	if(x+1<width){if(map[x+1][y]=="."&&weights[x+1][y].n=="."){return [x+1,y,0]}}
+	if(y-1>=0){if(map[x][y-1]=="."&&weights[x][y-1].n=="."){return [x,y-1,0]}}
+	if(y+1<height){if(map[x][y+1]=="."&&weights[x][y+1].n=="."){return [x,y+1,0]}}
+	
+	if(x-1>=0){if(map[x-1][y]=="O"&&weights[x-1][y].n=="."){return [x-1,y,1]}}
+	if(x+1<width){if(map[x+1][y]=="O"&&weights[x+1][y].n=="."){return [x+1,y,1]}}
+	if(y-1>=0){if(map[x][y-1]=="O"&&weights[x][y-1].n=="."){return [x,y-1,1]}}
+	if(y+1<height){if(map[x][y+1]=="O"&&weights[x][y+1].n=="."){return [x,y+1,1]}}
+	
+	return "none"
+}
+
+function findConnections(){
+	for(var c = 0;c<height;c++){
+		for(var c1 = 0;c1<width;c1++){
+			if(weights[c][c1].n!="."&&weights[c][c1].n!="#"){
+				//check left
+				if(c-1>=0){
+					if(weights[c-1][c1].n!="."
+						&&weights[c-1][c1].n!="#"	
+						&&weights[c][c1].l!=weights[c-1][c1].l){
+						if(connect(weights[c][c1].l,weights[c-1][c1].l)){
+							iterateAndClear(c,c1);
+							iterateAndClear(c-1,c1);
+							initWeights();return;
+						}
+					}
+				}
+				//check right
+				if(c+1<width){
+					if(weights[c+1][c1].n!="."
+						&&weights[c+1][c1].n!="#"	
+						&&weights[c][c1].l!=weights[c+1][c1].l){
+						if(connect(weights[c][c1].l,weights[c+1][c1].l)){
+							iterateAndClear(c,c1);
+							iterateAndClear(c+1,c1);
+							initWeights();return;
+						}
+					}
+				}
+				//check up
+				if(c1-1>=0){
+					if(weights[c][c1-1].n!="."
+						&&weights[c][c1-1].n!="#"	
+						&&weights[c][c1].l!=weights[c][c1-1].l){
+						if(connect(weights[c][c1].l,weights[c][c1-1].l)){
+							iterateAndClear(c,c1);
+							iterateAndClear(c,c1-1);
+							initWeights();return;
+						}
+					}
+				}
+				//check down
+				if(c1+1<height){
+					if(weights[c][c1+1].n!="."
+						&&weights[c][c1+1].n!="#"	
+						&&weights[c][c1].l!=weights[c][c1+1].l){
+						if(connect(weights[c][c1].l,weights[c][c1+1].l)){
+							iterateAndClear(c,c1);
+							iterateAndClear(c,c1+1);
+							initWeights();return;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+function iterateAndClear(x,y){
+
+	var temp = weights[x][y];
+	while(temp.parent!="end"){
+		if(map[temp.x][temp.y]=="O"){map[temp.x][temp.y]=".";clearedCounter++;
+		}
+		temp = temp.parent;
+	}
+}
+
+function connect(K,L){
+	
+	//a valid connection has to include at least 1 letter that hasn't been used
+	//after exactly 3 valid connections the game is over
+
+	var usedConnection = false;
+	var usedK=false;
+	var usedL=false;
+
+	for(var c = 0;c<used.length;c++){
+		if(used[c][0]==K&&used[c][1]==L
+		||used[c][0]==L&&used[c][1]==K
+		){usedConnection=true;break;}
+	}
+	
+	if(!usedConnection){
+		used.push([K,L]);
+		if(K=="A"||L=="A"){usedA=true}
+		if(K=="B"||L=="B"){usedB=true}
+		if(K=="C"||L=="C"){usedC=true}
+		if(K=="D"||L=="D"){usedD=true}
+		
+		connections++;
+		if(connections>2&&usedA&&usedB&&usedC&&usedD){win = true;}
+
+		
+		console.log(used);
+		
+		// check logical extensions
+		
+		
+		
+			var inferred = false;
+			
+			
+			for(var c = 0;c<used.length;c++){
+				for(var c1 = 0;c1<used.length;c1++){
+					if(c==c1){continue;}
+					if(used[c][0]==used[c1][0]
+					&&used[c][1]!=used[c1][1]){
+						inferred = [used[c][1],used[c1][1]];
+					}else if(used[c][0]==used[c1][1]
+					&&used[c][1]!=used[c1][0]){
+						inferred = [used[c][1],used[c1][0]];		
+					}else if(used[c][1]==used[c1][1]
+					&&used[c][0]!=used[c1][0]){
+						inferred = [used[c][0],used[c1][0]];
+					}else if(used[c][1]==used[c1][0]
+					&&used[c][0]!=used[c1][1]){
+						inferred = [used[c][0],used[c1][1]];	
+					}
+				}
+			}
+			
+			if(inferred!=false){			
+				used.push(inferred);
+			}
+		
+		console.log(used)
+		
+		return true;
+		
+	}
+	
+	
+	
+	return false;
+}
+
+initWeights();
+run();
+
+</script>
