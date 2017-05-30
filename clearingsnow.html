@@ -3,6 +3,7 @@
 <a href = "index.html">Back to vesot.com</a><br/><br/>
 <canvas id='can' style ='background-color:gray'></canvas>
 <canvas id='weights' style ='background-color:gray'></canvas>
+<p id='answer'>Answer is _</p>
 </body>
 </html>
 <script>
@@ -16,6 +17,8 @@ var houses = new Array();
 var weights = new Array();
 var win = false;
 
+var clearedMap = new Array();
+
 var connections = 0;
 var clearedCounter = 0;
 
@@ -25,8 +28,11 @@ var usedB=false;
 var usedC=false;
 var usedD=false;
 
-var width = 16;
-var height = 16;
+var width = Math.floor(Math.random()*20)+1;
+var height = Math.floor(Math.random()*14)+5;
+
+width = 16;
+height = 16;
 
 canvas.width = 20+(width*10);
 canvas.height = 20+(height*10);
@@ -36,6 +42,7 @@ weightsCanvas.height = 20+(height*10);
 // generate blank
 for( var c = 0;c<height;c++){
 	map[c] = new Array();
+	clearedMap[c] = new Array();
 	for( var c1 = 0;c1<width;c1++){
 		map[c][c1]="O";
 	}
@@ -79,23 +86,23 @@ for(var c = 0;c<4;c++){
 
 
 function refresh(){
-	
+	ctx.font = "10px Arial";
 	ctx.clearRect(0,0,canvas.width,canvas.height);
 	ctxW.clearRect(0,0,weightsCanvas.width,weightsCanvas.height);
 	
 	for( var c = 0;c<height;c++){
 		for( var c1 = 0;c1<width;c1++){
-		ctx.font = "10px Arial";
-		switch(map[c][c1]){
-			case "A":ctx.fillStyle = "white";break;
-			case "B":ctx.fillStyle = "pink";break;
-			case "C":ctx.fillStyle = "yellow";break;
-			case "D":ctx.fillStyle = "cyan";break;
-			default:ctx.fillStyle = "black";
-		}	
-			ctx.fillText(map[c][c1],10+(c1*10),20+(c*10));
-			
-			
+			ctx.fillStyle="white"
+			if(clearedMap[c][c1]=="O"){
+			ctx.fillText("=",10+(c1*10),20+(c*10));
+			}
+		}
+		
+	}
+	
+	for( var c = 0;c<height;c++){
+		for( var c1 = 0;c1<width;c1++){
+		
 		switch(weights[c][c1].l){
 			case "A":ctxW.fillStyle = "white";break;
 			case "B":ctxW.fillStyle = "pink";break;
@@ -104,7 +111,20 @@ function refresh(){
 			default:ctxW.fillStyle = "black";
 		}		
 			ctxW.fillText(weights[c][c1].n,10+(c1*10),20+(c*10));
+		
+		if(clearedMap[c][c1]=="O"){continue;}
+	
+		switch(map[c][c1]){
+			case "A":ctx.fillStyle = "white";break;
+			case "B":ctx.fillStyle = "pink";break;
+			case "C":ctx.fillStyle = "yellow";break;
+			case "D":ctx.fillStyle = "cyan";break;
+			default:ctx.fillStyle = "black";
+		}	
+			ctx.fillText(map[c][c1],10+(c1*10),20+(c*10));
+
 		}
+		
 		
 	}
 }
@@ -148,7 +168,7 @@ function stepWeights(){
 	
 	var smallest = 10000;
 	var sTile;
-	var temp;
+	var temp = "none";
 
 	for(var c = 0;c<height;c++){
 		for(var c1 = 0;c1<width;c1++){
@@ -162,33 +182,36 @@ function stepWeights(){
 			}
 		}
 	}
-
+	
+	if(temp == "none"){win="true";clearedCounter = "not possible.";return;}
+	
 	weights[temp[0]][temp[1]] = new wTile(sTile.n+temp[2],sTile.l,sTile,temp[0],temp[1]);
 }
 
 function run(){
 		if(!win){
+			console.log("tick");
 			window.requestAnimationFrame(run);
-			stepWeights();
-			
-			//check connections
 			findConnections();
-			//check win	
-			console.log("tick")
+			stepWeights();
 			refresh();
 		}
+		if(win){
+		document.getElementById('answer').innerHTML = "Answer is " + clearedCounter;
+		}
+		
 }
 
 function smallestEmpty(x,y){
 	if(x-1>=0){if(map[x-1][y]=="."&&weights[x-1][y].n=="."){return [x-1,y,0]}}
-	if(x+1<width){if(map[x+1][y]=="."&&weights[x+1][y].n=="."){return [x+1,y,0]}}
+	if(x+1<height){if(map[x+1][y]=="."&&weights[x+1][y].n=="."){return [x+1,y,0]}}
 	if(y-1>=0){if(map[x][y-1]=="."&&weights[x][y-1].n=="."){return [x,y-1,0]}}
-	if(y+1<height){if(map[x][y+1]=="."&&weights[x][y+1].n=="."){return [x,y+1,0]}}
+	if(y+1<width){if(map[x][y+1]=="."&&weights[x][y+1].n=="."){return [x,y+1,0]}}
 	
 	if(x-1>=0){if(map[x-1][y]=="O"&&weights[x-1][y].n=="."){return [x-1,y,1]}}
-	if(x+1<width){if(map[x+1][y]=="O"&&weights[x+1][y].n=="."){return [x+1,y,1]}}
+	if(x+1<height){if(map[x+1][y]=="O"&&weights[x+1][y].n=="."){return [x+1,y,1]}}
 	if(y-1>=0){if(map[x][y-1]=="O"&&weights[x][y-1].n=="."){return [x,y-1,1]}}
-	if(y+1<height){if(map[x][y+1]=="O"&&weights[x][y+1].n=="."){return [x,y+1,1]}}
+	if(y+1<width){if(map[x][y+1]=="O"&&weights[x][y+1].n=="."){return [x,y+1,1]}}
 	
 	return "none"
 }
@@ -210,7 +233,7 @@ function findConnections(){
 					}
 				}
 				//check right
-				if(c+1<width){
+				if(c+1<height){
 					if(weights[c+1][c1].n!="."
 						&&weights[c+1][c1].n!="#"	
 						&&weights[c][c1].l!=weights[c+1][c1].l){
@@ -234,7 +257,7 @@ function findConnections(){
 					}
 				}
 				//check down
-				if(c1+1<height){
+				if(c1+1<width){
 					if(weights[c][c1+1].n!="."
 						&&weights[c][c1+1].n!="#"	
 						&&weights[c][c1].l!=weights[c][c1+1].l){
@@ -254,10 +277,13 @@ function iterateAndClear(x,y){
 
 	var temp = weights[x][y];
 	while(temp.parent!="end"){
-		if(map[temp.x][temp.y]=="O"){map[temp.x][temp.y]=".";clearedCounter++;
+		if(map[temp.x][temp.y]=="O"){map[temp.x][temp.y]=".";clearedMap[temp.x][temp.y]="O";clearedCounter++;
 		}
 		temp = temp.parent;
 	}
+	
+	console.log("Cleared: " + clearedCounter)
+	
 }
 
 function connect(K,L){
@@ -286,7 +312,7 @@ function connect(K,L){
 		if(connections>2&&usedA&&usedB&&usedC&&usedD){win = true;}
 
 		
-		console.log(used);
+		//console.log(used);
 		
 		// check logical extensions
 		
@@ -318,7 +344,7 @@ function connect(K,L){
 				used.push(inferred);
 			}
 		
-		console.log(used)
+		//console.log(used)
 		
 		return true;
 		
