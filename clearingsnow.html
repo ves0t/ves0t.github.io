@@ -192,8 +192,8 @@ function run(){
 		if(!win){
 			console.log("tick");
 			window.requestAnimationFrame(run);
-			findConnections();
 			stepWeights();
+			findConnections();
 			refresh();
 		}
 		if(win){
